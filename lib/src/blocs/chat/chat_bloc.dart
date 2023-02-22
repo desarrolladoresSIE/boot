@@ -12,7 +12,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
   ChatBloc({required this.chatProvider}) : super(const ChatState()) {
     on<ConversationsEvent>(
-      (event, emit) => emit( state.copyWith(conversations: event.conversations)),
+      (event, emit) => emit(state.copyWith(conversations: event.conversations)),
     );
     on<LoadingChatEvent>(
       (event, emit) => emit(state.copyWith(loadingChat: event.loadingChat)),
@@ -20,16 +20,19 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   }
   Future<void> getChat() async {
     add(const LoadingChatEvent(true));
-    final response = await chatProvider.getChat(chatBodyModel);
+
     final miChat = ConversationModel(
       remitente: 'local',
       text: chatBodyModel.prompt,
     );
+    add(ConversationsEvent([...state.conversations, miChat]));
+
+    final response = await chatProvider.getChat(chatBodyModel);
     final chatBoot = ConversationModel(
       remitente: 'boot',
       text: response.text,
     );
-    add(ConversationsEvent([...state.conversations, miChat, chatBoot]));
+    add(ConversationsEvent([...state.conversations, chatBoot]));
     add(const LoadingChatEvent(false));
   }
 }

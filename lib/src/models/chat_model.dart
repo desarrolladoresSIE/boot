@@ -19,7 +19,7 @@ class ChatBodyModel {
 
   ChatBodyModel({
     this.model = 'text-davinci-003',
-    this.maxTokens = 100,
+    this.maxTokens = 4000,
     this.n = 1,
     required this.prompt,
     this.stream = false,

@@ -1,12 +1,36 @@
+import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:yucelied/src/blocs/blocs.dart';
 import 'package:yucelied/src/pages/pages.dart';
 
-class ChatPage extends StatelessWidget {
-  final TextEditingController _controller = TextEditingController();
+class ChatPage extends StatefulWidget {
+  const ChatPage({super.key});
 
-  ChatPage({super.key});
+  @override
+  State<ChatPage> createState() => _ChatPageState();
+}
+
+class _ChatPageState extends State<ChatPage> {
+  late TextEditingController textEditingController;
+  late ScrollController scrollController;
+  late FocusNode focusNode;
+
+  @override
+  void initState() {
+    textEditingController = TextEditingController();
+    scrollController = ScrollController();
+    focusNode = FocusNode();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    textEditingController.dispose();
+    scrollController.dispose();
+    focusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,81 +39,100 @@ class ChatPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('JUCE-LIED CHAT'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(14.0),
-        child: BlocBuilder<ChatBloc, ChatState>(
-          builder: (context, state) {
-            return Column(
-              children: [
-                Expanded(
-                  child: Stack(
-                    children: [
-                      ListView.builder(
-                        itemCount: state.conversations.length,
-                        keyboardDismissBehavior:
-                            ScrollViewKeyboardDismissBehavior.onDrag,
-                        itemBuilder: (_, i) {
-                          final chat = state.conversations[i];
-                          return ListTile(
-                            title: Text(chat.text),
-                            leading: (chat.remitente == 'boot')
-                                ? const CircleAvatar(
-                                    backgroundImage: AssetImage(
-                                        'assets/images/asistente.png'),
-                                  )
-                                : null,
-                            trailing: (chat.remitente == 'local')
-                                ? const CircleAvatar()
-                                : null,
-                          );
-                        },
+      body: BlocBuilder<ChatBloc, ChatState>(
+        builder: (context, state) {
+          return Column(
+            children: [
+              Flexible(
+                child: ListView.builder(
+                  controller: scrollController,
+                  itemCount: state.conversations.length,
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  itemBuilder: (_, i) {
+                    final chat = state.conversations[i];
+                    return Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Align(
+                        alignment: (chat.remitente == 'local')
+                            ? Alignment.centerRight
+                            : Alignment.centerLeft,
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                              color: (chat.remitente == 'local')
+                                  ? Theme.of(context).primaryColor
+                                  : const Color.fromARGB(255, 223, 223, 223),
+                              borderRadius: BorderRadius.circular(20)),
+                          child: AnimatedTextKit(
+                            totalRepeatCount: 1,
+                            animatedTexts: [
+                              TyperAnimatedText(
+                                chat.text,
+                                speed: const Duration(milliseconds: 40),
+                                textStyle: TextStyle(
+                                  color: (chat.remitente == 'local'
+                                      ? Colors.white
+                                      : null),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                      if (state.loadingChat)
-                        const Center(
-                          child: CircularProgressIndicator(),
-                        )
+                    );
+                  },
+                ),
+              ),
+              if (state.loadingChat) ...[
+                const Center(
+                  child: CircularProgressIndicator(),
+                ),
+                const SizedBox(height: 10),
+              ],
+              Material(
+                color: const Color.fromARGB(255, 232, 232, 232),
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    children: [
+                      _FormDatatext(
+                        controller: textEditingController,
+                        focusNode: focusNode,
+                      ),
+                      const SizedBox(width: 5),
+                      _ButtonSend(
+                        controller: textEditingController,
+                        focusNode: focusNode,
+                      ),
                     ],
                   ),
                 ),
-                SafeArea(
-                  child: Row(
-                    children: [
-                      _FormDataText(controller: _controller),
-                      const SizedBox(width: 5),
-                      _ButtonSend(controller: _controller),
-                    ],
-                  ),
-                )
-              ],
-            );
-          },
-        ),
+              )
+            ],
+          );
+        },
       ),
     );
   }
 }
 
 class _ButtonSend extends StatelessWidget {
-  const _ButtonSend({
-    required TextEditingController controller,
-  }) : _controller = controller;
-
-  final TextEditingController _controller;
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  const _ButtonSend({required this.controller, required this.focusNode});
 
   @override
   Widget build(BuildContext context) {
     final chatBloc = BlocProvider.of<ChatBloc>(context);
     return IconButton(
-      color: Colors.white,
-      style: const ButtonStyle(
-        backgroundColor: MaterialStatePropertyAll(Colors.blue),
-      ),
+      color: Theme.of(context).primaryColor,
       onPressed: (!chatBloc.state.loadingChat)
           ? () async {
-              FocusManager.instance.primaryFocus?.unfocus();
-              chatBloc.chatBodyModel.prompt = _controller.text;
+              focusNode.unfocus();
+              chatBloc.chatBodyModel.prompt = controller.text;
+              controller.clear();
               await chatBloc.getChat();
-              _controller.text = '';
             }
           : null,
       icon: const Icon(Icons.send),
@@ -98,26 +141,20 @@ class _ButtonSend extends StatelessWidget {
   }
 }
 
-class _FormDataText extends StatelessWidget {
-  const _FormDataText({
-    required TextEditingController controller,
-  }) : _controller = controller;
-
-  final TextEditingController _controller;
+class _FormDatatext extends StatelessWidget {
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  const _FormDatatext({required this.controller, required this.focusNode});
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
       child: TextFormField(
-        controller: _controller,
-        decoration: const InputDecoration(
-          contentPadding: EdgeInsets.symmetric(horizontal: 20),
+        maxLines: null,
+        focusNode: focusNode,
+        controller: controller,
+        decoration: const InputDecoration.collapsed(
           hintText: '¿Cuál es tu pregunta?',
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.all(
-              Radius.circular(30),
-            ),
-          ),
         ),
       ),
     );
