@@ -83,10 +83,11 @@ class _ChatPageState extends State<ChatPage> {
                                     TyperAnimatedText(
                                       chat.text.trim(),
                                       speed: Duration(
-                                          milliseconds:
-                                              (chat.remitente == 'boot')
-                                                  ? 30
-                                                  : 0),
+                                          milliseconds: (i ==
+                                                  state.conversations.length -
+                                                      1)
+                                              ? 40
+                                              : 0),
                                       textStyle: TextStyle(
                                         color: (chat.remitente == 'local'
                                             ? Colors.white
@@ -158,6 +159,7 @@ class _ChatPageState extends State<ChatPage> {
                                   setState(() {
                                     active = false;
                                   });
+                                  speechToText.stop();
                                   _submitbutton(
                                     focusNode: focusNode,
                                     textEditingController:
@@ -165,7 +167,6 @@ class _ChatPageState extends State<ChatPage> {
                                     context: context,
                                     textAudio: textAudio,
                                   );
-                                  speechToText.stop();
                                 },
                                 child: CircleAvatar(
                                   child: Icon((active)
@@ -202,21 +203,21 @@ class _ButtonSend extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final chatBloc = BlocProvider.of<ChatBloc>(context);
-    return IconButton(
-      color: Theme.of(context).primaryColor,
-      onPressed: (!chatBloc.state.loadingChat)
-          ? () async => _submitbutton(
-                focusNode: focusNode,
-                textEditingController: controller,
-                context: context,
-              )
-          : null,
-      icon: Icon(
-        Icons.send,
-        color: Theme.of(context).primaryColor,
-      ),
-      tooltip: 'Enviar',
-    );
+    return (!chatBloc.state.loadingChat)
+        ? IconButton(
+            color: Theme.of(context).primaryColor,
+            onPressed: () async => _submitbutton(
+              focusNode: focusNode,
+              textEditingController: controller,
+              context: context,
+            ),
+            icon: Icon(
+              Icons.send,
+              color: Theme.of(context).primaryColor,
+            ),
+            tooltip: 'Enviar',
+          )
+        : Container();
   }
 }
 
