@@ -106,9 +106,9 @@ class _ChatPageState extends State<ChatPage> {
                           child: Text(
                             textAudio,
                             style: const TextStyle(
-                              fontSize: 20,
+                              fontSize: 22,
                               fontWeight: FontWeight.w500,
-                              color: Color.fromARGB(255, 153, 153, 153),
+                              color: Color.fromARGB(255, 87, 87, 87),
                             ),
                           ),
                         ),
