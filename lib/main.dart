@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:yucelied/src/blocs/blocs.dart';
+import 'package:yucelied/src/pages/home_page.dart';
 import 'package:yucelied/src/pages/pages.dart';
 import 'package:yucelied/src/providers/providers.dart';
 
@@ -17,6 +18,9 @@ void main() => runApp(
               chatProvider: ChatProvider(),
             ),
           ),
+          BlocProvider(
+            create: (_) => MenuBloc(),
+          ),
         ],
         child: const MyApp(),
       ),
@@ -31,10 +35,11 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(useMaterial3: true),
       title: 'Yucelied',
       debugShowCheckedModeBanner: false,
-      initialRoute: '/chat',
+      initialRoute: '/home',
       routes: {
+        '/home': (_) => const HomePage(),
         '/images': (_) => const ImagesPage(),
-        '/chat': (_) => ChatPage()
+        '/chat': (_) => const ChatPage()
       },
     );
   }

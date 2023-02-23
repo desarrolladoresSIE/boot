@@ -1,6 +1,8 @@
 import 'package:animated_text_kit/animated_text_kit.dart';
+import 'package:avatar_glow/avatar_glow.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:speech_to_text/speech_to_text.dart';
 import 'package:yucelied/src/blocs/blocs.dart';
 import 'package:yucelied/src/pages/pages.dart';
 
@@ -15,12 +17,17 @@ class _ChatPageState extends State<ChatPage> {
   late TextEditingController textEditingController;
   late ScrollController scrollController;
   late FocusNode focusNode;
+  late GlobalKey<FormState> globalkey;
+  bool active = false;
+  late SpeechToText speechToText;
+  String textAudio = '';
 
   @override
   void initState() {
     textEditingController = TextEditingController();
     scrollController = ScrollController();
     focusNode = FocusNode();
+    speechToText = SpeechToText();
     super.initState();
   }
 
@@ -44,45 +51,68 @@ class _ChatPageState extends State<ChatPage> {
           return Column(
             children: [
               Flexible(
-                child: ListView.builder(
-                  controller: scrollController,
-                  itemCount: state.conversations.length,
-                  keyboardDismissBehavior:
-                      ScrollViewKeyboardDismissBehavior.onDrag,
-                  itemBuilder: (_, i) {
-                    final chat = state.conversations[i];
-                    return Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Align(
-                        alignment: (chat.remitente == 'local')
-                            ? Alignment.centerRight
-                            : Alignment.centerLeft,
-                        child: Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                              color: (chat.remitente == 'local')
-                                  ? Theme.of(context).primaryColor
-                                  : const Color.fromARGB(255, 223, 223, 223),
-                              borderRadius: BorderRadius.circular(20)),
-                          child: AnimatedTextKit(
-                            totalRepeatCount: 1,
-                            animatedTexts: [
-                              TyperAnimatedText(
-                                chat.text,
-                                speed: const Duration(milliseconds: 40),
-                                textStyle: TextStyle(
-                                  color: (chat.remitente == 'local'
-                                      ? Colors.white
-                                      : null),
+                child: (!active)
+                    ? ListView.builder(
+                        controller: scrollController,
+                        itemCount: state.conversations.length,
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
+                        itemBuilder: (_, i) {
+                          final chat = state.conversations[i];
+                          return Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Align(
+                              alignment: (chat.remitente == 'local')
+                                  ? Alignment.centerRight
+                                  : Alignment.centerLeft,
+                              child: Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: (chat.remitente == 'local')
+                                      ? Theme.of(context).primaryColor
+                                      : const Color.fromARGB(
+                                          255, 223, 223, 223),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: AnimatedTextKit(
+                                  isRepeatingAnimation: false,
+                                  repeatForever: false,
+                                  displayFullTextOnTap: true,
+                                  totalRepeatCount: 1,
+                                  animatedTexts: [
+                                    TyperAnimatedText(
+                                      chat.text.trim(),
+                                      speed: Duration(
+                                          milliseconds:
+                                              (chat.remitente == 'boot')
+                                                  ? 30
+                                                  : 0),
+                                      textStyle: TextStyle(
+                                        color: (chat.remitente == 'local'
+                                            ? Colors.white
+                                            : null),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ],
+                            ),
+                          );
+                        },
+                      )
+                    : Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            textAudio,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w500,
+                              color: Color.fromARGB(255, 153, 153, 153),
+                            ),
                           ),
                         ),
                       ),
-                    );
-                  },
-                ),
               ),
               if (state.loadingChat) ...[
                 const Center(
@@ -93,14 +123,58 @@ class _ChatPageState extends State<ChatPage> {
               Material(
                 color: const Color.fromARGB(255, 232, 232, 232),
                 child: Padding(
-                  padding: const EdgeInsets.all(8.0),
+                  padding: const EdgeInsets.all(6.0),
                   child: Row(
                     children: [
                       _FormDatatext(
                         controller: textEditingController,
                         focusNode: focusNode,
                       ),
-                      const SizedBox(width: 5),
+                      const SizedBox(width: 14),
+                      AvatarGlow(
+                        animate: active,
+                        endRadius: 30,
+                        glowColor: Theme.of(context).primaryColor,
+                        child: (!state.loadingChat)
+                            ? GestureDetector(
+                                onTapDown: (_) async {
+                                  if (!active) {
+                                    final available =
+                                        await speechToText.initialize();
+                                    if (available) {
+                                      setState(() {
+                                        textAudio = '';
+                                        active = true;
+                                      });
+                                      speechToText.listen(onResult: (resut) {
+                                        setState(() {
+                                          textAudio = resut.recognizedWords;
+                                        });
+                                      });
+                                    }
+                                  }
+                                },
+                                onTapUp: (_) async {
+                                  setState(() {
+                                    active = false;
+                                  });
+                                  _submitbutton(
+                                    focusNode: focusNode,
+                                    textEditingController:
+                                        textEditingController,
+                                    context: context,
+                                    textAudio: textAudio,
+                                  );
+                                  speechToText.stop();
+                                },
+                                child: CircleAvatar(
+                                  child: Icon((active)
+                                      ? Icons.mic_none_rounded
+                                      : Icons.mic),
+                                ),
+                              )
+                            : Container(),
+                      ),
                       _ButtonSend(
                         controller: textEditingController,
                         focusNode: focusNode,
@@ -120,7 +194,10 @@ class _ChatPageState extends State<ChatPage> {
 class _ButtonSend extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
-  const _ButtonSend({required this.controller, required this.focusNode});
+  const _ButtonSend({
+    required this.controller,
+    required this.focusNode,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -128,14 +205,16 @@ class _ButtonSend extends StatelessWidget {
     return IconButton(
       color: Theme.of(context).primaryColor,
       onPressed: (!chatBloc.state.loadingChat)
-          ? () async {
-              focusNode.unfocus();
-              chatBloc.chatBodyModel.prompt = controller.text;
-              controller.clear();
-              await chatBloc.getChat();
-            }
+          ? () async => _submitbutton(
+                focusNode: focusNode,
+                textEditingController: controller,
+                context: context,
+              )
           : null,
-      icon: const Icon(Icons.send),
+      icon: Icon(
+        Icons.send,
+        color: Theme.of(context).primaryColor,
+      ),
       tooltip: 'Enviar',
     );
   }
@@ -144,7 +223,10 @@ class _ButtonSend extends StatelessWidget {
 class _FormDatatext extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
-  const _FormDatatext({required this.controller, required this.focusNode});
+  const _FormDatatext({
+    required this.controller,
+    required this.focusNode,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -159,4 +241,28 @@ class _FormDatatext extends StatelessWidget {
       ),
     );
   }
+}
+
+Future _submitbutton({
+  required FocusNode focusNode,
+  required TextEditingController textEditingController,
+  required BuildContext context,
+  String? textAudio,
+}) async {
+  final chatBloc = BlocProvider.of<ChatBloc>(context);
+  final textprompt = textAudio ?? textEditingController.text;
+  focusNode.unfocus();
+  if (textprompt == '') {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        duration: Duration(seconds: 2),
+        backgroundColor: Color.fromARGB(255, 162, 67, 61),
+        content: Text('Tienes que realizar una pregunta'),
+      ),
+    );
+    return;
+  }
+  chatBloc.chatBodyModel.prompt = textprompt;
+  textEditingController.clear();
+  await chatBloc.getChat();
 }

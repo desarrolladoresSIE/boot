@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 
 class HttpServices {
   late Dio _dio;
-  final String _token = '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';
+  final String _token = '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';
   HttpServices() {
     _dio = Dio()
       ..options.headers = {
