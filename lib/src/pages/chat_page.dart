@@ -107,7 +107,9 @@ class _ChatPageState extends State<ChatPage> {
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: Text(
-                            textAudio,
+                            (textAudio != '')
+                                ? textAudio
+                                : 'dime tu pregunta, te escucho....',
                             style: const TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.w500,
@@ -126,7 +128,7 @@ class _ChatPageState extends State<ChatPage> {
               Material(
                 color: const Color.fromARGB(255, 232, 232, 232),
                 child: Padding(
-                  padding: const EdgeInsets.all(6.0),
+                  padding: const EdgeInsets.all(8.0),
                   child: Row(
                     children: [
                       _FormDatatext(
