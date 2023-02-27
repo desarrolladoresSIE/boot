@@ -128,7 +128,7 @@ class _ChatPageState extends State<ChatPage> {
               Material(
                 color: const Color.fromARGB(255, 232, 232, 232),
                 child: Padding(
-                  padding: const EdgeInsets.all(8.0),
+                  padding: const EdgeInsets.all(6.0),
                   child: Row(
                     children: [
                       _FormDatatext(
