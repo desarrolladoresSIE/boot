@@ -84,8 +84,10 @@ class _ChatPageState extends State<ChatPage> {
                                       chat.text.trim(),
                                       speed: Duration(
                                           milliseconds: (i ==
-                                                  state.conversations.length -
-                                                      1)
+                                                      state.conversations
+                                                              .length -
+                                                          1 &&
+                                                  chat.remitente == 'boot')
                                               ? 40
                                               : 0),
                                       textStyle: TextStyle(
