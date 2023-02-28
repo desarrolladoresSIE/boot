@@ -73,7 +73,10 @@ class _ChatPageState extends State<ChatPage> {
                           final chat = state.conversations[i];
                           if (chat.remitente == 'boot' &&
                               state.conversations.length - 1 == i) {
-                            _textVoz(text: chat.text, flutterTts: flutterTts,mute: mute);
+                            _textVoz(
+                                text: chat.text,
+                                flutterTts: flutterTts,
+                                mute: mute);
                           }
                           return Padding(
                             padding: const EdgeInsets.symmetric(
@@ -84,10 +87,9 @@ class _ChatPageState extends State<ChatPage> {
                               onTap: (chat.remitente == 'boot')
                                   ? () async {
                                       _textVoz(
-                                        text: chat.text,
-                                        flutterTts: flutterTts,
-                                        mute: mute
-                                      );
+                                          text: chat.text,
+                                          flutterTts: flutterTts,
+                                          mute: mute);
                                     }
                                   : null,
                               child: Align(
@@ -135,7 +137,7 @@ class _ChatPageState extends State<ChatPage> {
                       )
                     : Center(
                         child: Padding(
-                          padding: const EdgeInsets.all(8.0),
+                          padding: const EdgeInsets.all(13.0),
                           child: Text(
                             (textAudio != '')
                                 ? textAudio
@@ -180,9 +182,11 @@ class _ChatPageState extends State<ChatPage> {
                                     if (available) {
                                       setState(() {
                                         textAudio = '';
+                                        flutterTts.stop();
                                         activeMicrofono = true;
                                       });
-                                      speechToText.listen(onResult: (resut) {
+                                      await speechToText.listen(
+                                          onResult: (resut) {
                                         setState(() {
                                           textAudio = resut.recognizedWords;
                                         });
@@ -302,12 +306,14 @@ Future _submitbutton({
     );
     return;
   }
-  chatBloc.chatBodyModel.prompt = textprompt;
   textEditingController.clear();
-  await chatBloc.getChat();
+  await chatBloc.getChat(textprompt);
 }
 
-Future _textVoz({required String text, required FlutterTts flutterTts,required bool mute}) async {
+Future _textVoz(
+    {required String text,
+    required FlutterTts flutterTts,
+    required bool mute}) async {
   await flutterTts.setVolume((mute) ? 0 : 1);
   await flutterTts.setLanguage('es-ES');
   await flutterTts.speak(text);

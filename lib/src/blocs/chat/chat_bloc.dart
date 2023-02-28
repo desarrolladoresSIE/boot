@@ -8,7 +8,6 @@ part 'chat_state.dart';
 
 class ChatBloc extends Bloc<ChatEvent, ChatState> {
   final ChatProvider chatProvider;
-  ChatBodyModel chatBodyModel = ChatBodyModel(prompt: 'hola');
 
   ChatBloc({required this.chatProvider}) : super(const ChatState()) {
     on<ConversationsEvent>(
@@ -18,14 +17,14 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       (event, emit) => emit(state.copyWith(loadingChat: event.loadingChat)),
     );
   }
-  Future<void> getChat() async {
+  Future<void> getChat(String prompt) async {
     add(const LoadingChatEvent(true));
     final miChat = ConversationModel(
       remitente: 'local',
-      text: chatBodyModel.prompt,
+      text: prompt,
     );
     add(ConversationsEvent([...state.conversations, miChat]));
-    final response = await chatProvider.getChat(chatBodyModel);
+    final response = await chatProvider.getChat(ChatBodyModel(prompt: prompt));
     final chatBoot = ConversationModel(
       remitente: 'boot',
       text: response.text,
