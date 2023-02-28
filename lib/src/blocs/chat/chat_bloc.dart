@@ -20,13 +20,11 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   }
   Future<void> getChat() async {
     add(const LoadingChatEvent(true));
-
     final miChat = ConversationModel(
       remitente: 'local',
       text: chatBodyModel.prompt,
     );
     add(ConversationsEvent([...state.conversations, miChat]));
-
     final response = await chatProvider.getChat(chatBodyModel);
     final chatBoot = ConversationModel(
       remitente: 'boot',
